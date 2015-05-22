@@ -1,0 +1,14 @@
+{
+  "name": "githubDiffs",
+  "version": "0.0.0",
+  "description": "simple app to show js concepts/syntax/gotchas",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "rafaelspdasilva@gmail.com",
+  "license": "MIT",
+  "devDependencies": {
+    "hapi": "^8.4.0"
+  }
+}
