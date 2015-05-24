@@ -1,5 +1,3 @@
-require("babel-core").transform("code");
-
 var Hapi = require('hapi');
 
 var server = new Hapi.Server();
@@ -19,7 +17,7 @@ server.route({
 
 server.route({
   method: 'GET',
-  path: '/public/{filename}',
+  path: '/public/{filename*}',
   handler: {
     file: function (request) {
       return 'public/' + request.params.filename;
