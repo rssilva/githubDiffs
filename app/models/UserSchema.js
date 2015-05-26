@@ -1,6 +1,7 @@
 module.exports = {
   login: String,
   id: Number,
+  _update: Date,
   avatar_url: String,
   gravatar_id: String,
   url: String,
