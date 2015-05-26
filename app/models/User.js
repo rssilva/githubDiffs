@@ -1,21 +1,50 @@
 let request = require('request');
 let mongoose = require('mongoose');
 let UserSchemaObj = require('./UserSchema');
-let Schema = mongoose.Schema;
 
+let Schema = mongoose.Schema;
 let UserSchema = new Schema(UserSchemaObj);
 
-function getByLogin (login) {
-  User.find({ login: login }, (err, result) => {
-    if (err) return console.error(err);
+const USER_DELTA = 12;
 
-    result.length ? null : getByRequest(login);
-  });
+function getByLogin (login, cb) {
+
+  function onFind (err, result) {
+    if (err) {
+      return console.error(err);
+    }
+
+    const shouldUpdate = hasDataExpired(result);
+
+    if (!result) {
+      getByRequest(login, cb);
+    }
+
+    if (result && shouldUpdate) {
+      getByRequest(login, cb);
+    }
+
+    if (result && !shouldUpdate) {
+      cb(result);
+    }
+  }
+
+  User.findOne({ login: login }, onFind);
 };
 
-function getByRequest (login) {
+function hasDataExpired (result={}) {
+  const update = result._update;
+  const now = new Date();
+  let delta = (now - update)/(3600000);
 
-  let options = {
+  console.log('update time diff in hours ', delta)
+
+  return delta > USER_DELTA;
+};
+
+function getByRequest (login, cb) {
+
+  const options = {
     url: `https://api.github.com/users/${login}`,
     headers: {
       'User-Agent': 'diffs app'
@@ -23,10 +52,15 @@ function getByRequest (login) {
   }
 
   request(options, (error, response, body) => {
+    console.log('requesting new data...');
+
     if (!error && response.statusCode == 200) {
       body = JSON.parse(body);
+      body._update = new Date();
 
       let user = new User(body);
+
+      cb(response);
 
       user.save((err) => {
         console.log(err, 'Saved?')
