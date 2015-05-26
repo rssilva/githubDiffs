@@ -1,26 +1,22 @@
-var Hapi = require('hapi');
+let Hapi = require('hapi');
+let mongoose = require('mongoose');
 
-var server = new Hapi.Server();
+let server = new Hapi.Server();
+
 server.connection({ port: 3000 });
 
-server.start(function () {
+server.start( () => {
   console.log('Server running at:', server.info.uri);
 });
 
-server.route({
-  method: 'GET',
-  path: '/',
-  handler: {
-    file: 'public/index.html'
-  }
-});
+var db = mongoose.connection;
 
-server.route({
-  method: 'GET',
-  path: '/public/{filename*}',
-  handler: {
-    file: function (request) {
-      return 'public/' + request.params.filename;
-    }
-  }
-});
+db.on('error', console.error);
+db.once('open', onDbOpen);
+
+mongoose.connect('mongodb://localhost/git_diffs');
+
+function onDbOpen () {
+  let Router = require('./routes/Router');
+  Router.init(server);
+}
