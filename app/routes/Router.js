@@ -1,4 +1,5 @@
 let userRoutes = require('./UserRoutes');
+let followersRoutes = require('./FollowersRoutes');
 
 let Router = {
   init(server) {
@@ -6,6 +7,9 @@ let Router = {
 
     this.userRoutes = userRoutes;
     this.userRoutes.init(server);
+
+    this.followersRoutes = followersRoutes;
+    this.followersRoutes.init(server);
   },
 
   setBasic(server) {
