@@ -1,4 +1,4 @@
-let User = require('../models/User');
+let User = require('../models/UserModel');
 let userModel = new User();
 
 let UserRoutes = {
