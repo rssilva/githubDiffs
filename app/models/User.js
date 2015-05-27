@@ -32,7 +32,8 @@ function getByLogin (login, cb) {
   User.findOne({ login: login }, onFind);
 };
 
-function hasDataExpired (result={}) {
+function hasDataExpired (result) {
+  result = result || {};
   const update = result._update;
   const now = new Date();
   let delta = (now - update)/(3600000);
@@ -60,7 +61,7 @@ function getByRequest (login, cb) {
 
       let user = new User(body);
 
-      cb(response);
+      cb(user);
 
       user.save((err) => {
         console.log(err, 'Saved?')
