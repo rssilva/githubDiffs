@@ -21,6 +21,7 @@ function getByLogin (login, cb) {
     }
 
     if (result && shouldUpdate) {
+      // @ToDo update instead save
       getByRequest(login, cb);
     }
 
@@ -52,9 +53,9 @@ function getByRequest (login, cb) {
     }
   }
 
-  request(options, (error, response, body) => {
+  function onResponse (error, response, body) {
     console.log('requesting new data...');
-
+    // @ToDo handle API request limit
     if (!error && response.statusCode == 200) {
       body = JSON.parse(body);
       body._update = new Date();
@@ -63,11 +64,11 @@ function getByRequest (login, cb) {
 
       cb(user);
 
-      user.save((err) => {
-        console.log(err, 'Saved?')
-      });
+      user.save((err) => console.log(err, 'Saved?'));
     }
-  });
+  }
+
+  request(options, onResponse);
 };
 
 UserSchema.methods.getByLogin = getByLogin;
