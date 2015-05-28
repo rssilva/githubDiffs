@@ -1,3 +1,4 @@
+let Promise = require('promise');
 let request = require('request');
 let mongoose = require('mongoose');
 let UserSchemaObj = require('./UserSchema');
@@ -17,12 +18,17 @@ function getByLogin (login, cb) {
     const shouldUpdate = hasDataExpired(result);
 
     if (!result) {
-      getByRequest(login, cb);
+      getByRequest(login, cb).done( user => {
+        user.save((err) => console.log(err, 'Saved?'));
+        cb(user);
+      });
     }
 
     if (result && shouldUpdate) {
-      // @ToDo update instead save
-      getByRequest(login, cb);
+      getByRequest(login, cb).done( user => {
+        user.update({login: login}, (err) => console.log(err, 'Updated?'));
+        cb(user);
+      });
     }
 
     if (result && !shouldUpdate) {
@@ -53,22 +59,28 @@ function getByRequest (login, cb) {
     }
   }
 
-  function onResponse (error, response, body) {
-    console.log('requesting new data...');
-    // @ToDo handle API request limit
-    if (!error && response.statusCode == 200) {
-      body = JSON.parse(body);
-      body._update = new Date();
+  function onData (body) {
+    body = JSON.parse(body);
+    body._update = new Date();
 
-      let user = new User(body);
+    let user = new User(body);
 
-      cb(user);
-
-      user.save((err) => console.log(err, 'Saved?'));
-    }
+    return user;
   }
 
-  request(options, onResponse);
+  let promise = new Promise( (resolve, reject) => {
+    // @ToDO: handle request errors
+
+    request(options).on('response', (response) => {
+      let allData = '';
+
+      response.on('data', data => allData += data.toString());
+
+      response.on('end', () => resolve(onData(allData)));
+    });
+  });
+
+  return promise;
 };
 
 UserSchema.methods.getByLogin = getByLogin;
