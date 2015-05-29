@@ -8,35 +8,38 @@ let UserSchema = new Schema(UserSchemaObj);
 
 const USER_DELTA = 12;
 
-function getByLogin (login, cb) {
+function getByLogin (login) {
 
-  function onFind (err, result) {
-    if (err) {
-      return console.error(err);
-    }
+  function onFind (result, resolve) {
 
     const shouldUpdate = hasDataExpired(result);
 
     if (!result) {
-      getByRequest(login, cb).done( user => {
+      getByRequest(login).done( user => {
         user.save((err) => console.log(err, 'Saved?'));
-        cb(user);
+        resolve(user);
       });
     }
 
     if (result && shouldUpdate) {
-      getByRequest(login, cb).done( user => {
+      getByRequest(login).done( user => {
         user.update({login: login}, (err) => console.log(err, 'Updated?'));
-        cb(user);
+        resolve(user);
       });
     }
 
-    if (result && !shouldUpdate) {
-      cb(result);
-    }
+    return result;
   }
 
-  User.findOne({ login: login }, onFind);
+  let promise = new Promise( (resolve, reject) => {
+    User.findOne({ login: login })
+        .exec( (err, result) => {
+          if (err) reject(err)
+          result ? resolve(result) : onFind(result, resolve);
+        });
+  });
+
+  return promise;
 };
 
 function hasDataExpired (result) {
@@ -50,7 +53,7 @@ function hasDataExpired (result) {
   return delta > USER_DELTA;
 };
 
-function getByRequest (login, cb) {
+function getByRequest (login) {
 
   const options = {
     url: `https://api.github.com/users/${login}`,
@@ -59,7 +62,7 @@ function getByRequest (login, cb) {
     }
   }
 
-  function onData (body) {
+  let onData = function (body) {
     body = JSON.parse(body);
     body._update = new Date();
 
