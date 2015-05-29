@@ -10,7 +10,9 @@ let UserRoutes = {
       handler:function (request, reply) {
         const login = request.params.login;
 
-        userModel.getByLogin(login, reply);
+        userModel.getByLogin(login)
+            .catch(e => console.log('treta', e))
+            .done(reply)
       }
     });
 
