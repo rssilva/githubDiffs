@@ -11,7 +11,7 @@ let FollowersRoutes = {
         const login = request.params.login;
         const page = request.params.page;
 
-        followers.getByLogin(login, page, reply);
+        followers.getByLogin(login, page).done(reply);
       }
     });
 
