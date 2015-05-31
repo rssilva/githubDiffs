@@ -1,3 +1,4 @@
+let Promise = require('promise');
 let request = require('request');
 let mongoose = require('mongoose');
 let FollowersSchemaObj = require('../models/FollowersPageSchema');
@@ -8,28 +9,20 @@ let user = new User();
 let Schema = mongoose.Schema;
 let FollowersSchema = new Schema(FollowersSchemaObj);
 
-function getByLogin (login, page=0, cb) {
-  function onUserData (userData) {
-    Followers.find({followed: userData.login}, function (err, result) {
-      return result;
-    }).exec(function (err, result) {
+function getByLogin (login, page=0) {
 
-      if (result.length) {
-        cb(result);
-      }
+  let promise = new Promise( (resolve, reject) => {
+    Followers.find({login: login})
+        .exec( (err, result) => {
+          console.log(result.length)
+          result.length ? resolve(result) : getByRequest(login, page, resolve);
+        });
+  });
 
-      if (!result.length) {
-        getByRequest(login, page, cb);
-      }
-    });
-  }
-
-  user.getByLogin(login).then((result) => {
-    console.log('my result, from my promise', result.followed);
-  })
+  return promise;
 };
 
-function getByRequest (login, page=0, cb) {
+function getByRequest (login, page=0, resolve) {
 
   const options = {
     url: `https://api.github.com/users/${login}/followers?page=${page}`,
@@ -38,22 +31,28 @@ function getByRequest (login, page=0, cb) {
     }
   }
 
+  function parseData (data) {
+    let parsed = {
+      followers: JSON.parse(data),
+      '_update': new Date(),
+      page: page,
+      login: login
+    };
+
+    return parsed;
+  };
+
   function onResponse (error, response, body) {
     console.log('requesting followers data...');
     // @ToDo handle API request limit
     if (!error && response.statusCode == 200) {
-      let followersPage = {
-        followers: JSON.parse(body),
-        '_update': new Date(),
-        page: page,
-        followed: login
-      }
+      let followersPage = parseData(body);
 
-      cb(followersPage);
+      resolve(followersPage);
 
       let followers = new Followers(followersPage);
 
-      followers.save((err) => console.log(err, 'Saved Assim, facil desse jeito?'));
+      followers.save((err) => console.log(err, 'Saved!'));
     }
   }
 
